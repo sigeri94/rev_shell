@@ -1,3 +1,5 @@
+#cargo build --target=x86_64-pc-windows-gnu --release
+
 use std::net::TcpStream;
 use std::process::{Command, Stdio};
 use std::io::{BufRead, Write, BufReader};
