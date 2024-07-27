@@ -1,3 +1,5 @@
+#nim c -d:mingw -d:release rs3.nim
+
 import std/osproc
 import std/times
 import net
