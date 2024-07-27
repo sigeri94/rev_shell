@@ -1,3 +1,5 @@
+#C:\Windows\Microsoft.Net\Framework\V3.5\csc.exe rs.cs -nowarn:1691,618
+	
 using System;
 using System.Diagnostics;
 using System.IO;
