@@ -1,3 +1,5 @@
+#GOOS=windows GOARCH=amd64 go build -o myprogram.exe main.go
+
 package main
 
 import (
