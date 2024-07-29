@@ -1,4 +1,4 @@
-#GOOS=windows GOARCH=amd64 go build -o myprogram.exe main.go
+//GOOS=windows GOARCH=amd64 go build -o grs.exe grs.go
 
 package main
 
