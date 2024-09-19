@@ -1,4 +1,5 @@
-//clang++ --target=x86_64-w64-mingw32 -static-libgcc -static-libstdc++ -o j.exe j.cpp -lws2_32 -s -Wno-write-strings -fno-exceptions -fmerge-all-constants
+//clang++ --target=x86_64-w64-mingw32 -o j2.exe j.cpp -lws2_32 -s -Wno-write-strings -fno-exceptions -fmerge-all-constants -static-libstdc++ -static-libgcc
+//https://networkintelligence.ai/malware-development-welcome-dark-side-part-2-2/
 //cl.exe /EHsc
 
 #include <iostream>
