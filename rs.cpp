@@ -1,4 +1,5 @@
-#cl.exe /EHsc
+//clang++ --target=x86_64-w64-mingw32 -static-libgcc -static-libstdc++ -o j.exe j.cpp -lws2_32 -s -Wno-write-strings -fno-exceptions -fmerge-all-constants
+//cl.exe /EHsc
 
 #include <iostream>
 #include <winsock2.h>
@@ -63,7 +64,7 @@ int main() {
             continue;
         }
 
-        std::cout << "Connected to server." << std::endl;
+//        std::cout << "Connected to server." << std::endl;
 
         while (true) {
             send(clientSocket, ">", 1, 0);
