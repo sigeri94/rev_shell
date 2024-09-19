@@ -3,7 +3,7 @@
 
 //939008 jg++.exe
 //938496 jclang.exe
-
+//https://networkintelligence.ai/malware-development-welcome-dark-side-part-2-2/
 //cl.exe /EHsc
 
 #include <iostream>
